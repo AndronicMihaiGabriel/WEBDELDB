@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <title>Afisare și Modificare Consum Energie</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Tabel consum energie</h2>
+    <form id="searchForm">
+        <label>Caută după ClientID:</label>
+        <input type="number" id="searchClientID" name="client_id">
+        <button type="submit">Search</button>
+        <button type="button" onclick="loadTable()">Reset</button>
+    </form>
+    <br>
+    <table id="consumTable">
+        <thead>
+            <tr>
+
+                <th>ClientID</th>
+                <th>Locatie</th>
+                <th>StatusContor</th>
+                <th>TipClient</th>
+                <th>Consum_kWh</th>
+                <th>Salvează</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <script>
+        function loadTable(clientID = "") {
+            let url = "/api/consum_energie";
+            if (clientID) url += "?client_id=" + clientID;
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector("#consumTable tbody");
+                    tbody.innerHTML = "";
+                    data.forEach(row => {
+                        tbody.innerHTML += `
+                        <tr>
+                            <td><input type="number" value="${row.ClientID}" id="ClientID_${row.ClientID}"></td>
+                            <td><input type="text" value="${row.Locatie}" id="Locatie_${row.ClientID}"></td>
+                            <td><input type="text" value="${row.StatusContor}" id="StatusContor_${row.ClientID}"></td>
+                            <td><input type="text" value="${row.TipClient}" id="TipClient_${row.ClientID}"></td>
+                            <td><input type="number" value="${row.Consum_kWh}" id="Consum_kWh_${row.ClientID}"></td>
+                            <td><button onclick="saveRow(${row.ClientID})">Salvează</button></td>
+                        </tr>`;
+                    });
+                });
+        }
+
+        function saveRow(clientID) {
+            const data = {
+                ClientID: document.getElementById(`ClientID_${clientID}`).value,
+                Locatie: document.getElementById(`Locatie_${clientID}`).value,
+                StatusContor: document.getElementById(`StatusContor_${clientID}`).value,
+                TipClient: document.getElementById(`TipClient_${clientID}`).value,
+                Consum_kWh: document.getElementById(`Consum_kWh_${clientID}`).value,
+            };
+            fetch(`/api/consum_energie/${clientID}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.success) alert("Modificare salvată!");
+                    else alert("Eroare la salvare!");
+                });
+        }
+
+        document.getElementById("searchForm").onsubmit = function (e) {
+            e.preventDefault();
+            const clientID = document.getElementById("searchClientID").value;
+            loadTable(clientID);
+        };
+
+        window.onload = () => { loadTable(); }
+    </script>
+</body>
+
+</html>

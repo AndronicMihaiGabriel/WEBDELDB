@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Top 5 Clienți</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 40px;
+        }
+
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            width: 60%;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> Top 5 Clienți cu cel mai mare consum</h1>
+
+    <label>De la: <input type="date" id="start_date"></label>
+    <label>Până la: <input type="date" id="end_date"></label>
+    <button onclick="loadTop5()">Afișează</button>
+
+    <table id="top5_table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>ID Client</th>
+                <th>Total Consum (kWh)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        function loadTop5() {
+            const start = document.getElementById("start_date").value;
+            const end = document.getElementById("end_date").value;
+            fetch(`/api/dashboard/top5?start_date=${start}&end_date=${end}`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector("#top5_table tbody");
+                    tbody.innerHTML = "";
+                    data.forEach((client, index) => {
+                        const row = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${client.ClientID}</td>
+                                <td>${client.total.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                })
+                .catch(err => alert("Eroare la încărcare top 5: " + err));
+        }
+    </script>
+</body>
+
+</html>

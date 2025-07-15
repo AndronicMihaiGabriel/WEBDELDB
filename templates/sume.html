@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard - Sume comparate</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h1>Dashboard: Comparare consum</h1>
+
+    <form id="date-form">
+        <fieldset>
+            <legend>Perioada principală</legend>
+            <label>Start: <input type="date" id="start_date" required></label>
+            <label>End: <input type="date" id="end_date" required></label>
+        </fieldset>
+        <fieldset>
+            <legend>Perioada de comparație</legend>
+            <label>Start: <input type="date" id="compare_start"></label>
+            <label>End: <input type="date" id="compare_end"></label>
+        </fieldset>
+        <button type="submit">Afișează</button>
+    </form>
+
+    <div id="rezultate" style="margin-top: 20px;">
+        <p><strong>Perioada 1:</strong></p>
+        <p>Total: <span id="total1">-</span> kWh, Mediu: <span id="mediu1">-</span> kWh</p>
+        <p><strong>Perioada 2:</strong></p>
+        <p>Total: <span id="total2">-</span> kWh, Mediu: <span id="mediu2">-</span> kWh</p>
+    </div>
+
+    <canvas id="consumChart" width="600" height="300"></canvas>
+
+    <script>
+        const chartCtx = document.getElementById('consumChart').getContext('2d');
+        let chart;
+
+        async function fetchSume(start, end) {
+            const res = await fetch(`/api/dashboard/Sume?start_date=${start}&end_date=${end}`);
+            return await res.json();
+        }
+
+        document.getElementById('date-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const start1 = document.getElementById('start_date').value;
+            const end1 = document.getElementById('end_date').value;
+            const start2 = document.getElementById('compare_start').value;
+            const end2 = document.getElementById('compare_end').value;
+
+            const data1 = await fetchSume(start1, end1);
+            document.getElementById('total1').textContent = data1.total_consum?.toFixed(2) ?? '0';
+            document.getElementById('mediu1').textContent = data1.mediu_consum?.toFixed(2) ?? '0';
+
+            let data2 = {};
+            if (start2 && end2) {
+                data2 = await fetchSume(start2, end2);
+                document.getElementById('total2').textContent = data2.total_consum?.toFixed(2) ?? '0';
+                document.getElementById('mediu2').textContent = data2.mediu_consum?.toFixed(2) ?? '0';
+            }
+
+            if (chart) chart.destroy();
+            chart = new Chart(chartCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Total', 'Mediu'],
+                    datasets: [
+                        {
+                            label: `Perioada 1 (${start1} - ${end1})`,
+                            data: [data1.total_consum ?? 0, data1.mediu_consum ?? 0],
+                            backgroundColor: '#4caf50'
+                        },
+                        {
+                            label: `Perioada 2 (${start2 || '-'} - ${end2 || '-'})`,
+                            data: [data2.total_consum ?? 0, data2.mediu_consum ?? 0],
+                            backgroundColor: '#f44336'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

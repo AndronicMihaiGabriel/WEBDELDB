@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Alerte Contor Defect</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            padding: 40px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> Alerte: Contoare Defecte</h1>
+    <ul id="alerte_lista"></ul>
+    <div id="client_modal"
+        style="display:none;position:fixed;top:20%;left:50%;transform:translate(-50%,0);background:#fff;border:1px solid #ccc;padding:20px;z-index:1000;">
+        <h2>Detalii Client</h2>
+        <div id="client_detalii"></div>
+        <button onclick="document.getElementById('client_modal').style.display='none'">Inchide</button>
+    </div>
+    <script>
+        fetch('/api/dashboard/defect')
+            .then(res => res.json())
+            .then(data => {
+                const lista = document.getElementById("alerte_lista");
+                data.forEach(item => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `Client ID: <strong>${item.ClientID}</strong> – 
+                    <a href="#" onclick="showDetalii(${item.ClientID});return false;">Vezi detalii client</a>`;
+                    lista.appendChild(li);
+                });
+            })
+            .catch(err => alert("Eroare la încărcare alerte: " + err));
+
+        function showDetalii(clientID) {
+            fetch(`/api/client/${clientID}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('client_detalii').innerHTML = `<p style="color:red;">${data.error}</p>`;
+                    } else {
+                        document.getElementById('client_detalii').innerHTML = `
+                        <p><strong>Client ID:</strong> ${data.ClientID}</p>
+                        <p><strong>Locație:</strong> ${data.Locatie}</p>
+                        <p><strong>Status Contor:</strong> ${data.StatusContor}</p>
+                        <p><strong>Tip Client:</strong> ${data.TipClient}</p>
+                    `;
+                    }
+                    document.getElementById('client_modal').style.display = 'block';
+                })
+                .catch(err => {
+                    document.getElementById('client_detalii').innerHTML = `<p style="color:red;">Eroare la încărcare detalii!</p>`;
+                    document.getElementById('client_modal').style.display = 'block';
+                });
+        }
+    </script>
+</body>
+
+</html>

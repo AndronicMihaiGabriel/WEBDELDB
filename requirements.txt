@@ -1,0 +1,12 @@
+Flask
+SQLAlchemy
+requests
+gunicorn
+pytest
+flask_bcrypt
+flask_login
+flask_cors
+mysql-connector-python
+mysql
+api
+dotenv

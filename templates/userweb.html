@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <title>Userweb - Afisare si Modificare</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Tabel userweb</h2>
+    <form id="searchForm">
+        <label>Caută după Username:</label>
+        <input type="text" id="searchUsername" name="username">
+        <button type="submit">Search</button>
+        <button type="button" onclick="loadTable()">Reset</button>
+    </form>
+    <br>
+    <table id="userwebTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Rol</th>
+                <th>Salvează</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <script>
+        function loadTable(username = "") {
+            let url = "/api/userweb";
+            if (username) url += "?username=" + encodeURIComponent(username);
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector("#userwebTable tbody");
+                    tbody.innerHTML = "";
+                    data.forEach(row => {
+                        tbody.innerHTML += `
+                        <tr>
+                            <td>${row.id}</td>
+                            <td>${row.username}</td>
+                            <td>
+                                <select id="rol_${row.id}">
+                                    <option value="admin" ${row.rol === 'admin' ? 'selected' : ''}>admin</option>
+                                    <option value="user" ${row.rol === 'user' ? 'selected' : ''}>user</option>
+                                </select>
+                            </td>
+                            <td><button onclick="saveRow(${row.id})">Salvează</button></td>
+                        </tr>`;
+                    });
+                });
+        }
+
+        function saveRow(id) {
+            const data = {
+                rol: document.getElementById(`rol_${id}`).value
+            };
+            fetch(`/api/userweb/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+                .then(res => res.json())
+                .then(resp => {
+                    if (resp.success) alert("Modificare salvată!");
+                    else alert("Eroare la salvare!");
+                });
+        }
+
+        document.getElementById("searchForm").onsubmit = function (e) {
+            e.preventDefault();
+            const username = document.getElementById("searchUsername").value;
+            loadTable(username);
+        };
+
+        window.onload = () => loadTable();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+    <title>Informatii Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            padding: 40px;
+            font-family: Arial;
+        }
+
+        input,
+        button {
+            margin: 10px;
+        }
+
+        #stats {
+            margin-bottom: 30px;
+        }
+
+        #consumTable {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        #consumTable th,
+        #consumTable td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Informatii Client</h2>
+    <form id="clientForm" onsubmit="event.preventDefault(); loadClientInfo();">
+        <label for="clientID">ClientID:</label>
+        <input type="number" id="clientID" name="clientID" required>
+        <button type="submit">Afișează</button>
+    </form>
+    <div id="infoSection" style="display:none;">
+        <h3>Statistici</h3>
+        <div id="stats"></div>
+        <canvas id="consumChart" width="700" height="300"></canvas>
+        <h3>Istoric consum</h3>
+        <table id="consumTable">
+            <thead>
+                <tr>
+                    <th>Data Citire</th>
+                    <th>Consum kWh</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        function loadClientInfo() {
+            const clientId = document.getElementById('clientID').value;
+            if (!clientId) return;
+
+            document.getElementById('infoSection').style.display = 'block';
+
+
+            fetch(`/api/client/${clientId}/statistici`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('stats').innerHTML = `
+                        <strong>Consum mediu:</strong> ${data.consum_mediu?.toFixed(2) ?? '-'} kWh<br>
+                        <strong>Consum maxim:</strong> ${data.consum_maxim?.toFixed(2) ?? '-'} kWh<br>
+                        <strong>Consum minim:</strong> ${data.consum_minim?.toFixed(2) ?? '-'} kWh
+                    `;
+                });
+
+
+            fetch(`/api/client/${clientId}/consum`)
+                .then(res => res.json())
+                .then(data => {
+
+                    const tbody = document.querySelector("#consumTable tbody");
+                    tbody.innerHTML = "";
+                    data.forEach(row => {
+                        tbody.innerHTML += `<tr>
+                            <td>${row.DataCitire ? row.DataCitire.substring(0, 10) : '-'}</td>
+                            <td>${row.Consum_kWh}</td>
+                        </tr>`;
+                    });
+
+
+                    const ctx = document.getElementById('consumChart').getContext('2d');
+                    if (window.consumChartInstance) window.consumChartInstance.destroy();
+                    window.consumChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(r => r.DataCitire ? r.DataCitire.substring(0, 10) : '-'),
+                            datasets: [{
+                                label: 'Consum kWh',
+                                data: data.map(r => r.Consum_kWh),
+                                borderColor: '#2196f3',
+                                backgroundColor: 'rgba(33,150,243,0.1)',
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { title: { display: true, text: 'Data Citire' } },
+                                y: { title: { display: true, text: 'Consum kWh' }, beginAtZero: true }
+                            }
+                        }
+                    });
+                });
+        }
+    </script>
+</body>
+
+</html>
